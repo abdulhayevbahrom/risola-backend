@@ -39,6 +39,7 @@ router.get("/clients/all", clientController.getAllClients);
 router.post("/clients/create", clientValidation, clientController.createClient);
 router.get("/clients/debtors", clientController.getDebtors);
 router.get("/clients/addresses", clientController.getUniqueAddresses);
+router.get("/clients/payments", clientController.getPaymentsByDateRange);
 router.get("/clients/package/:id", clientController.getClientbyPackage);
 router.post("/clients/pay-total/:id", clientController.payTotalClient);
 router.delete("/clients/delete/:id", clientController.deleteClient);

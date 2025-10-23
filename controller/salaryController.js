@@ -23,11 +23,13 @@ module.exports = {
           const clients = await Client.find({ agent: admin._id }).populate(
             "package"
           );
+
           let agentBonus = 0;
 
           for (const client of clients) {
             const memberCount = client.members.length;
             const baseAmount = memberCount * (client.package?.min_price || 0);
+
             const paidAmount = client.paymentHistory.reduce(
               (sum, p) => sum + p.amount,
               0

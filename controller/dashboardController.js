@@ -75,14 +75,64 @@ class DashboardController {
       const [agentStats, targetStats, regionStats, districtStats] =
         await Promise.all([
           // 🔸 Agentlar bo‘yicha
+          // Client.aggregate([
+          //   { $match: dateFilter },
+          //   {
+          //     $group: {
+          //       _id: "$agent",
+          //       totalSalesCount: { $sum: 1 },
+          //     },
+          //   },
+          //   {
+          //     $lookup: {
+          //       from: "admins",
+          //       localField: "_id",
+          //       foreignField: "_id",
+          //       as: "agentInfo",
+          //     },
+          //   },
+          //   {
+          //     $project: {
+          //       _id: 0,
+          //       agent_id: "$_id",
+          //       name: {
+          //         $concat: [
+          //           {
+          //             $ifNull: [
+          //               { $arrayElemAt: ["$agentInfo.firstName", 0] },
+          //               "",
+          //             ],
+          //           },
+          //           " ",
+          //           {
+          //             $ifNull: [
+          //               { $arrayElemAt: ["$agentInfo.lastName", 0] },
+          //               "",
+          //             ],
+          //           },
+          //         ],
+          //       },
+          //       totalSalesCount: 1,
+          //     },
+          //   },
+          // ]),
           Client.aggregate([
+            // Sana bo‘yicha filtr
             { $match: dateFilter },
+            // Guruhlash
             {
               $group: {
                 _id: "$agent",
                 totalSalesCount: { $sum: 1 },
               },
             },
+            // Agent_id null bo‘lmasligini tekshirish
+            {
+              $match: {
+                _id: { $ne: null },
+              },
+            },
+            // Admin ma’lumotlarini olish
             {
               $lookup: {
                 from: "admins",
@@ -91,6 +141,7 @@ class DashboardController {
                 as: "agentInfo",
               },
             },
+            // Ma’lumotlarni formatlash
             {
               $project: {
                 _id: 0,

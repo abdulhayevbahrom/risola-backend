@@ -216,6 +216,154 @@ class ClientController {
       response.serverError(res, error.message, error);
     }
   }
+
+  // async getPaymentsByDateRange(req, res) {
+  //   try {
+  //     const start = new Date();
+  //     start.setHours(0, 0, 0, 0);
+  //     const end = new Date();
+  //     end.setHours(23, 59, 59, 999);
+
+  //     const payments = await Client.aggregate([
+  //       // 1️⃣ To'lov tarixini yoyamiz
+  //       { $unwind: "$paymentHistory" },
+
+  //       // 2️⃣ Faqat ikki sana oralig‘idagi to‘lovlarni olamiz
+  //       {
+  //         $match: {
+  //           "paymentHistory.date": { $gte: start, $lte: end },
+  //         },
+  //       },
+
+  //       // 3️⃣ Ma’lumotni to‘lovlar bo‘yicha guruhlaymiz
+  //       {
+  //         $group: {
+  //           _id: "$_id",
+  //           groupName: { $first: "$groupName" },
+  //           totalPaid: { $sum: "$paymentHistory.amount" },
+  //           payments: {
+  //             $push: {
+  //               date: "$paymentHistory.date",
+  //               amount: "$paymentHistory.amount",
+  //               paymentType: "$paymentHistory.paymentType",
+  //             },
+  //           },
+  //         },
+  //       },
+
+  //       // 4️⃣ Istasangiz agent yoki boshqa ma’lumotni ham join qilamiz
+  //       {
+  //         $lookup: {
+  //           from: "admins",
+  //           localField: "agent",
+  //           foreignField: "_id",
+  //           as: "agent",
+  //         },
+  //       },
+  //       {
+  //         $unwind: { path: "$agent", preserveNullAndEmptyArrays: true },
+  //       },
+
+  //       // 5️⃣ So‘ngra tartib bilan chiqaramiz
+  //       { $sort: { totalPaid: -1 } },
+  //     ]);
+
+  //     res.json({
+  //       success: true,
+  //       count: payments.length,
+  //       payments,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //     res.status(500).json({ message: "Serverda xatolik yuz berdi", error });
+  //   }
+  // }
+  async getPaymentsByDateRange(req, res) {
+    try {
+      const { startDate, endDate } = req.query;
+
+      // Agar sanalar berilmagan bo'lsa, xato qaytaramiz
+      if (!startDate || !endDate) {
+        return res.status(400).json({
+          success: false,
+          message: "startDate va endDate parametrlari majburiy!",
+        });
+      }
+
+      // Sanalarni to'g'ri formatga o'tkazamiz
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+
+      // Sana validatsiyasi
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: "Noto'g'ri sana formati! YYYY-MM-DD formatida yuboring.",
+        });
+      }
+
+      const payments = await Client.aggregate([
+        // 1️⃣ To'lov tarixini yoyamiz
+        { $unwind: "$paymentHistory" },
+
+        // 2️⃣ Faqat ikki sana oralig'idagi to'lovlarni olamiz
+        {
+          $match: {
+            "paymentHistory.date": { $gte: start, $lte: end },
+          },
+        },
+
+        // 3️⃣ Ma'lumotni to'lovlar bo'yicha guruhlaymiz
+        {
+          $group: {
+            _id: "$_id",
+            groupName: { $first: "$groupName" },
+            fullName: { $first: "$fullName" }, // Individual mijozlar uchun
+            totalPaid: { $sum: "$paymentHistory.amount" },
+            payments: {
+              $push: {
+                date: "$paymentHistory.date",
+                amount: "$paymentHistory.amount",
+                paymentType: "$paymentHistory.paymentType",
+              },
+            },
+          },
+        },
+
+        // 4️⃣ Agent ma'lumotini join qilamiz
+        {
+          $lookup: {
+            from: "admins",
+            localField: "agent",
+            foreignField: "_id",
+            as: "agent",
+          },
+        },
+        {
+          $unwind: { path: "$agent", preserveNullAndEmptyArrays: true },
+        },
+
+        // 5️⃣ To'lov sanasi bo'yicha tartiblaymiz
+        { $sort: { "payments.date": -1 } },
+      ]);
+
+      res.json({
+        success: true,
+        count: payments.length,
+        payments,
+      });
+    } catch (error) {
+      console.error("getPaymentsByDateRange error:", error);
+      res.status(500).json({
+        success: false,
+        message: "Serverda xatolik yuz berdi",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = new ClientController();
