@@ -1,5 +1,11 @@
 const { Schema, model } = require("mongoose");
 
+const reservedSchema = new Schema({
+  agent: { type: Schema.Types.ObjectId, ref: "Admins", required: true },
+  reservedCount: { type: Number, required: true }, // qancha joy bron qilingan
+  createdAt: { type: Date, default: Date.now },
+});
+
 const packageSchema = new Schema(
   {
     title: { type: String, required: true },
@@ -10,6 +16,7 @@ const packageSchema = new Schema(
     startDate: { type: Date, default: Date.now },
     endDate: { type: Date },
     leader: [{ type: String, default: "" }],
+    reservations: [reservedSchema],
   },
   { timestamps: true }
 );

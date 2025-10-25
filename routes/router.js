@@ -24,11 +24,13 @@ router.post(
   packageValidation,
   packageController.createPackage
 );
+router.post("/packages/bron", packageController.reservePackage);
 router.put(
   "/packages/update/:id",
   packageValidation,
   packageController.updatePackage
 );
+router.delete("/packages/unreserve", packageController.unreservePackage);
 router.delete("/packages/delete/:id", packageController.deletePackage);
 
 // clients
